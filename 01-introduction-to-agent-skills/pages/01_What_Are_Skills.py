@@ -1,13 +1,146 @@
 import streamlit as st
 
+from utils.llm import ask_claude
+from utils.trace import render_trace
+
 st.set_page_config(page_title="What are Skills?", page_icon="🧩", layout="wide")
 st.title("What are Skills?")
-st.caption("Introduction to Agent Skills — Module 01")
+st.caption("Introduction to Agent Skills — Section 1 of 6 · ~15 minutes")
+
+with st.expander("What you'll learn", expanded=True):
+    st.markdown(
+        """
+- Define what Claude Code skills are and how they work
+- Explain where skills live (personal vs. project directories)
+- Distinguish between skills, CLAUDE.md, and slash commands
+- Identify scenarios where skills are the right customization tool
+        """
+    )
+
+with st.expander("📖 What is a Skill — concept", expanded=True):
+    st.markdown(
+        """
+Every time you explain your team's coding standards to Claude, you're repeating yourself.
+Every PR review, you re-describe how you want feedback structured. Every commit message,
+you remind Claude of your preferred format. **Skills fix this.**
+
+A **Skill** is a folder of instructions and resources that Claude Code can discover and use
+to handle a task more accurately. Each skill lives in a `SKILL.md` file with a `name` and
+`description` in its frontmatter. The **description is how Claude decides whether to use
+the skill** — when you make a request, Claude compares it against every available skill's
+description and activates the ones that match.
+
+**Where skills live:**
+
+| Scope | Location | Shared with |
+|---|---|---|
+| Personal | `~/.claude/skills` (Windows: `C:/Users/<you>/.claude/skills`) | Just you, across every project |
+| Project | `.claude/skills` at the repo root | Anyone who clones the repo — committed to version control |
+
+Project skills are where team standards live: brand guidelines, preferred fonts and colors,
+code review checklists — anything the whole team should share automatically.
+
+**The rule of thumb:** if you find yourself explaining the same thing to Claude repeatedly,
+that's a skill waiting to be written.
+        """
+    )
+
+with st.expander("📐 Core Code Pattern — SKILL.md frontmatter"):
+    st.code(
+        """---
+name: pr-review
+description: Reviews pull requests for code quality. Use when reviewing PRs or checking code changes.
+---
+
+# Below the frontmatter: the actual instructions
+# your review checklist, formatting preferences, whatever
+# Claude needs to know to do this task well.
+""",
+        language="yaml",
+    )
+    st.markdown(
+        """
+**Key insight:** Claude only loads the `name` and `description` up front — the body below
+the frontmatter (the real instructions) only loads into context once the skill actually
+matches a request. That's what keeps skills context-efficient: your PR review checklist
+isn't sitting in context while you're debugging an unrelated issue.
+        """
+    )
+
+st.markdown("### Skills vs. CLAUDE.md vs. Slash Commands")
+st.markdown(
+    """
+| # | CLAUDE.md | Skills | Slash Commands |
+|---|---|---|---|
+| 1 | Loads into every conversation | Loads on demand, only when the description matches | Requires the user to explicitly type it |
+| 2 | Best for rules that always apply (e.g. "always use TypeScript strict mode") | Best for task-specific knowledge (PR review, commit format, brand guidelines) | Best for actions you want to trigger deliberately |
+| 3 | Always consumes context | Only consumes context when activated — keeps the window efficient | — |
+| 4 | — | Activates automatically when Claude recognizes the situation | Never activates automatically |
+"""
+)
 
 st.markdown("---")
-st.markdown("**What this section covers:** What Skills are and how they differ from other Claude Code customization options like CLAUDE.md, hooks, and subagents.")
-st.info(
-    "🔜 Awaiting this section's real lesson content from the Skilljar course. "
-    "Paste it in and this page will be built out with a concept explainer, a "
-    "core code pattern, a live demo, and an execution trace."
+st.markdown("### Try it yourself — skill matching, live")
+st.markdown(
+    "This is the same decision Claude Code makes internally: compare your request against "
+    "each skill's `description` text and decide which one (if any) matches. The mini skill "
+    "registry below is fixed — only your request changes."
+)
+
+SKILL_REGISTRY = """\
+1. name: pr-review
+   description: Reviews pull requests for code quality. Use when reviewing PRs or checking code changes.
+2. name: commit-message
+   description: Writes commit messages following Conventional Commits format. Use when creating a git commit.
+3. name: brand-guidelines
+   description: Applies company brand voice, fonts, and colors. Use when writing marketing copy or designing web pages.
+4. name: debug-checklist
+   description: Walks through a systematic debugging checklist for Python errors. Use when diagnosing a bug or exception.
+"""
+
+st.code(SKILL_REGISTRY, language="yaml")
+
+request = st.text_input(
+    "Your request to Claude Code",
+    placeholder="e.g. Can you help me write a commit message for this fix?",
+)
+
+if st.button("Ask Claude which skill would match", type="primary"):
+    if not request.strip():
+        st.warning("Type a request first.")
+    else:
+        system_prompt = (
+            "You are simulating the skill-matching step Claude Code performs before "
+            "responding to a request. You are given a numbered list of available skills, "
+            "each with a name and a description from its SKILL.md frontmatter. Decide which "
+            "skill, if any, matches the user's request — based only on the description text, "
+            "the same way Claude Code compares a request against skill descriptions. Reply "
+            "with the matched skill name (or 'no match'), then one sentence naming the exact "
+            "phrase in the description that triggered the match."
+        )
+        user_message = f"Available skills:\n{SKILL_REGISTRY}\nUser request: \"{request}\""
+        try:
+            with st.spinner("Matching against skill descriptions..."):
+                answer = ask_claude(system_prompt, user_message)
+            st.success(answer)
+            render_trace(system_prompt, user_message, answer)
+        except Exception as e:
+            st.error(f"Couldn't reach the Claude API — check ANTHROPIC_API_KEY in .env. ({e})")
+
+st.markdown("---")
+with st.expander("Lesson reflection"):
+    st.markdown(
+        """
+- Think about your most recent interactions with Claude Code. Which instructions did you
+  find yourself repeating? How might a skill have saved you time?
+- Consider your team's workflow. Which standards or processes would benefit most from being
+  encoded as skills?
+        """
+    )
+    st.text_area("Your notes (not saved — just for thinking out loud)", key="reflection_notes")
+
+st.markdown("### What's next")
+st.markdown(
+    "**Section 2 — Creating your first skill:** create a skill from scratch and see how "
+    "Claude Code discovers, matches, and loads skills behind the scenes."
 )

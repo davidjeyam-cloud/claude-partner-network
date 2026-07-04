@@ -35,15 +35,15 @@ team's standards.
 st.markdown("### Sections")
 
 sections = [
-    (1, "What are Skills?", "01_What_Are_Skills"),
-    (2, "Creating your first skill", "02_Creating_Your_First_Skill"),
-    (3, "Configuration and multi-file skills", "03_Configuration_And_MultiFile_Skills"),
-    (4, "Skills vs. other Claude Code features", "04_Skills_Vs_Other_Claude_Code_Features"),
-    (5, "Sharing skills", "05_Sharing_Skills"),
-    (6, "Troubleshooting skills", "06_Troubleshooting_Skills"),
+    (1, "What are Skills?", "✅ Complete"),
+    (2, "Creating your first skill", "🔜 Awaiting lesson content"),
+    (3, "Configuration and multi-file skills", "🔜 Awaiting lesson content"),
+    (4, "Skills vs. other Claude Code features", "🔜 Awaiting lesson content"),
+    (5, "Sharing skills", "🔜 Awaiting lesson content"),
+    (6, "Troubleshooting skills", "🔜 Awaiting lesson content"),
 ]
 
-rows = "\n".join(f"| {n} | {title} | 🔜 Awaiting lesson content |" for n, title, _ in sections)
+rows = "\n".join(f"| {n} | {title} | {status} |" for n, title, status in sections)
 st.markdown(
     f"""
 | # | Section | Status |
