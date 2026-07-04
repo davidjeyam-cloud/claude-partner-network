@@ -36,7 +36,7 @@ st.markdown("### Sections")
 
 sections = [
     (1, "What are Skills?", "✅ Complete"),
-    (2, "Creating your first skill", "🔜 Awaiting lesson content"),
+    (2, "Creating your first skill", "✅ Complete"),
     (3, "Configuration and multi-file skills", "🔜 Awaiting lesson content"),
     (4, "Skills vs. other Claude Code features", "🔜 Awaiting lesson content"),
     (5, "Sharing skills", "🔜 Awaiting lesson content"),
