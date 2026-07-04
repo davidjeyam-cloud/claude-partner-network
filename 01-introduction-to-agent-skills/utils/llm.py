@@ -17,11 +17,15 @@ def get_client() -> Anthropic:
     return _client
 
 
-def ask_claude(system: str, user: str, model: str = MODEL) -> str:
+def ask_claude_messages(system: str, messages: list, model: str = MODEL) -> str:
     response = get_client().messages.create(
         model=model,
         max_tokens=1024,
         system=system,
-        messages=[{"role": "user", "content": user}],
+        messages=messages,
     )
     return response.content[0].text
+
+
+def ask_claude(system: str, user: str, model: str = MODEL) -> str:
+    return ask_claude_messages(system, [{"role": "user", "content": user}], model)

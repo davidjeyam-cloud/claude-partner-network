@@ -1,7 +1,74 @@
 import streamlit as st
 
+from utils.chat import render_lesson_chat
 from utils.llm import ask_claude
+from utils.quiz import render_quiz
 from utils.trace import render_trace
+
+LESSON_CONTEXT = """\
+A skill is a directory containing a SKILL.md file with metadata (name, description) in
+frontmatter and instructions below. Claude loads only skill names and descriptions at
+startup, then matches incoming requests against those descriptions using semantic matching.
+
+Before Claude loads the full skill content into context, it asks the user to confirm —
+this keeps the user aware of what context is being pulled in.
+
+Skill priority for name conflicts, highest to lowest: Enterprise (managed settings) >
+Personal (~/.claude/skills) > Project (.claude/skills in a repo) > Plugins (installed
+plugins). This lets organizations enforce standards through enterprise skills while still
+allowing individual customization. To avoid conflicts, use descriptive names instead of
+generic ones like "review".
+
+To update a skill, edit its SKILL.md. To remove one, delete its directory. Always restart
+Claude Code for changes to take effect, since skills load at startup.
+"""
+
+QUIZ_QUESTIONS = [
+    {
+        "question": "What must you do after creating or editing a skill for the change to take effect?",
+        "options": [
+            "Restart Claude Code",
+            "Nothing — changes apply instantly",
+            "Re-run 'claude init'",
+            "Push the skill to GitHub",
+        ],
+        "answer_index": 0,
+        "explanation": "Claude Code loads skills at startup, so you must restart your session for new or edited skills to be picked up.",
+    },
+    {
+        "question": "What happens right before Claude loads the full content of a matched skill?",
+        "options": [
+            "Claude asks you to confirm loading it",
+            "Claude silently loads it with no confirmation",
+            "Claude emails you a summary",
+            "Claude runs it in a sandbox first",
+        ],
+        "answer_index": 0,
+        "explanation": "The confirmation step keeps you aware of exactly what context is being pulled into the conversation.",
+    },
+    {
+        "question": "If a Personal skill and a Project skill share the same name, which one wins?",
+        "options": [
+            "The Project skill",
+            "The Personal skill",
+            "Whichever was created most recently",
+            "Neither loads — Claude errors out",
+        ],
+        "answer_index": 1,
+        "explanation": "Priority order is Enterprise > Personal > Project > Plugins, so Personal outranks Project.",
+    },
+    {
+        "question": "How do you remove a skill?",
+        "options": [
+            "Delete its directory",
+            "Set 'active: false' in the frontmatter",
+            "Rename SKILL.md to SKILL.md.bak",
+            "Skills can't be removed once created",
+        ],
+        "answer_index": 0,
+        "explanation": "There's no disable flag — deleting the skill's directory removes it, then restart Claude Code.",
+    },
+]
 
 st.set_page_config(page_title="Creating your first skill", page_icon="🧩", layout="wide")
 st.title("Creating your first skill")
@@ -195,6 +262,12 @@ if st.button("Run the pr-description skill", type="primary"):
             render_trace(SKILL_INSTRUCTIONS, user_message, answer)
         except Exception as e:
             st.error(f"Couldn't reach the Claude API — check ANTHROPIC_API_KEY in .env. ({e})")
+
+st.markdown("---")
+render_quiz(QUIZ_QUESTIONS, key="quiz_02")
+
+st.markdown("---")
+render_lesson_chat(LESSON_CONTEXT, key="s02")
 
 st.markdown("---")
 with st.expander("Lesson reflection"):

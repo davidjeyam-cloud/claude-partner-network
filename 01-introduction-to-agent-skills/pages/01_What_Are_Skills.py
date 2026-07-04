@@ -1,7 +1,77 @@
 import streamlit as st
 
+from utils.chat import render_lesson_chat
 from utils.llm import ask_claude
+from utils.quiz import render_quiz
 from utils.trace import render_trace
+
+LESSON_CONTEXT = """\
+A Skill is a folder of instructions and resources that Claude Code can discover and use to
+handle a task more accurately. Each skill lives in a SKILL.md file with a name and
+description in its frontmatter. The description is how Claude decides whether to use the
+skill — Claude compares a request against every available skill's description and activates
+the ones that match.
+
+Personal skills live in ~/.claude/skills (Windows: C:/Users/<you>/.claude/skills) and follow
+you across every project. Project skills live in .claude/skills at the repo root, are
+committed to version control, and are shared with anyone who clones the repo.
+
+Skills vs. CLAUDE.md vs. Slash Commands: CLAUDE.md loads into every conversation and is best
+for rules that always apply. Skills load on demand, only when the description matches, and
+are best for task-specific knowledge — this keeps the context window efficient. Slash
+commands require the user to explicitly type them; skills activate automatically when Claude
+recognizes the situation.
+
+Rule of thumb: if you find yourself explaining the same thing to Claude repeatedly, that's a
+skill waiting to be written.
+"""
+
+QUIZ_QUESTIONS = [
+    {
+        "question": "What two fields must every SKILL.md frontmatter include?",
+        "options": [
+            "name and description",
+            "name and allowed-tools",
+            "description and model",
+            "name and model",
+        ],
+        "answer_index": 0,
+        "explanation": "name and description are what Claude reads to discover and match skills; allowed-tools and model are optional.",
+    },
+    {
+        "question": "Where do project skills live?",
+        "options": [
+            ".claude/skills inside the repository",
+            "~/.claude/skills in your home directory",
+            "A cloud-hosted skill registry",
+            "Inside the SKILL.md file itself",
+        ],
+        "answer_index": 0,
+        "explanation": "Project skills live in .claude/skills at the repo root and are committed to version control, so the whole team shares them.",
+    },
+    {
+        "question": "What's the key difference between a Skill and a CLAUDE.md file?",
+        "options": [
+            "Skills load on demand when they match a request; CLAUDE.md loads into every conversation",
+            "Skills only work in personal directories; CLAUDE.md only works in projects",
+            "CLAUDE.md is deprecated in favor of Skills",
+            "There is no difference",
+        ],
+        "answer_index": 0,
+        "explanation": "CLAUDE.md always loads into context; skills load only when their description matches the request, keeping context efficient.",
+    },
+    {
+        "question": "What decides whether a skill activates for a given request?",
+        "options": [
+            "The description field, matched against the request",
+            "The order skills were installed in",
+            "The length of the SKILL.md file",
+            "Whether the user types a slash command",
+        ],
+        "answer_index": 0,
+        "explanation": "Claude compares the request against every available skill's description text to decide which one(s) match.",
+    },
+]
 
 st.set_page_config(page_title="What are Skills?", page_icon="🧩", layout="wide")
 st.title("What are Skills?")
@@ -126,6 +196,12 @@ if st.button("Ask Claude which skill would match", type="primary"):
             render_trace(system_prompt, user_message, answer)
         except Exception as e:
             st.error(f"Couldn't reach the Claude API — check ANTHROPIC_API_KEY in .env. ({e})")
+
+st.markdown("---")
+render_quiz(QUIZ_QUESTIONS, key="quiz_01")
+
+st.markdown("---")
+render_lesson_chat(LESSON_CONTEXT, key="s01")
 
 st.markdown("---")
 with st.expander("Lesson reflection"):

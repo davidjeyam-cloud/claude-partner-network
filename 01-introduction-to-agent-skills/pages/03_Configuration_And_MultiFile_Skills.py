@@ -1,7 +1,71 @@
 import streamlit as st
 
+from utils.chat import render_lesson_chat
 from utils.llm import ask_claude
+from utils.quiz import render_quiz
 from utils.trace import render_trace
+
+LESSON_CONTEXT = """\
+name and description are required frontmatter fields; allowed-tools and model are optional
+but powerful additions. A good description answers two questions: what does the skill do,
+and when should Claude use it.
+
+allowed-tools restricts which tools Claude can use when the skill is active — useful for
+read-only or security-sensitive workflows. Omit it and nothing is restricted.
+
+Progressive disclosure: keep SKILL.md under 500 lines and link to supporting files
+(references/, scripts/, assets/) that Claude reads only when needed. Scripts execute
+without loading their contents into context — only the output consumes tokens, which is
+what keeps context efficient for environment validation, data transformations, and any
+operation more reliable as tested code than generated code.
+"""
+
+QUIZ_QUESTIONS = [
+    {
+        "question": "Which fields are optional in SKILL.md frontmatter?",
+        "options": [
+            "allowed-tools and model",
+            "name and description",
+            "name and allowed-tools",
+            "All fields are required",
+        ],
+        "answer_index": 0,
+        "explanation": "name and description are required; allowed-tools and model are optional additions.",
+    },
+    {
+        "question": "What does setting 'allowed-tools: Read, Grep, Glob, Bash' do?",
+        "options": [
+            "Restricts Claude to only those tools while the skill is active",
+            "Tells Claude which tools to install",
+            "Sets the order tools are tried in",
+            "Has no effect unless model is also set",
+        ],
+        "answer_index": 0,
+        "explanation": "With allowed-tools set, Claude can't edit or write files while this skill is active — only the listed tools are available.",
+    },
+    {
+        "question": "What's the recommended max length for SKILL.md before splitting into reference files?",
+        "options": [
+            "500 lines",
+            "50 lines",
+            "5,000 lines",
+            "There's no recommended limit",
+        ],
+        "answer_index": 0,
+        "explanation": "Past ~500 lines, move detailed material into references/ so SKILL.md stays a lean table of contents.",
+    },
+    {
+        "question": "Why tell Claude to run a script rather than read it?",
+        "options": [
+            "Only the script's output consumes context tokens, not its full source",
+            "Scripts can't be read by Claude",
+            "Running is faster than reading, but token cost is identical",
+            "It's a security requirement, not a context one",
+        ],
+        "answer_index": 0,
+        "explanation": "Executing the script keeps its source out of context entirely — only the output is consumed as tokens.",
+    },
+]
 
 st.set_page_config(page_title="Configuration and multi-file skills", page_icon="🧩", layout="wide")
 st.title("Configuration and multi-file skills")
@@ -157,6 +221,12 @@ if st.button("Check this description", type="primary"):
             render_trace(system_prompt, user_message, answer)
         except Exception as e:
             st.error(f"Couldn't reach the Claude API — check ANTHROPIC_API_KEY in .env. ({e})")
+
+st.markdown("---")
+render_quiz(QUIZ_QUESTIONS, key="quiz_03")
+
+st.markdown("---")
+render_lesson_chat(LESSON_CONTEXT, key="s03")
 
 st.markdown("---")
 with st.expander("Lesson reflection"):
