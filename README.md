@@ -11,7 +11,7 @@ Course content (lesson text, screenshots, notes) is relayed by the learner from 
 | 01 | Introduction to Agent Skills | [link](https://anthropic-partners.skilljar.com/introduction-to-agent-skills) | 🧭 In progress — 3/6 sections built |
 | 02 | Building with the Claude API | [link](https://anthropic-partners.skilljar.com/claude-with-the-anthropic-api) | 🔜 Scaffolded |
 | 03 | Claude Code in Action | [link](https://anthropic-partners.skilljar.com/claude-code-in-action) | 🔜 Scaffolded |
-| 04 | Introduction to Model Context Protocol | [link](https://anthropic-partners.skilljar.com/introduction-to-model-context-protocol) | 🔜 Scaffolded |
+| 04 | Introduction to Model Context Protocol | [link](https://anthropic-partners.skilljar.com/introduction-to-model-context-protocol) | 🧭 In progress — 0/11 sections built (built from provided course notes, see CLAUDE.md) |
 
 ## Running a module
 

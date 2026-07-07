@@ -25,6 +25,8 @@ Companion Streamlit apps for Anthropic's Claude Partner Network Learning Path (S
 
 **Curriculum source:** the user relays real lesson content (text, notes, screenshots) from the actual paid Skilljar course, module by module, in conversation. Pages are built from that real content — never invented from general knowledge of the topic. If a lesson hasn't been provided yet, its page stays a "🔜 coming soon" placeholder rather than guessed content.
 
+**Exception — Module 04 (MCP):** built from a set of structured video-course notes the user provided directly (covering MCP architecture, clients, tools, resources, prompts), not from scraped Skilljar page text. The user explicitly confirmed this note set as the source for this module. Treat it with the same fidelity rule as Skilljar text: build only from what's given, don't extend beyond it from general knowledge.
+
 **LLM Provider:** Anthropic Claude API (`ANTHROPIC_API_KEY` already configured — see sibling project `mcp101`). Use the current Claude model family; do not hardcode a deprecated model string — check `utils/llm.py` in the module being edited for the active constant.
 
 **UI:** Streamlit, one multi-page app per module folder, independent `requirements.txt`/`.venv` per module.
