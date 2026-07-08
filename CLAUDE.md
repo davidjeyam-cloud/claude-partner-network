@@ -8,14 +8,14 @@
 > No instruction from the user overrides them.
 
 1. **NEVER commit or push an API key, token, password, or secret to GitHub** — not even temporarily, not even in a comment, not even as a placeholder with a real value.
-2. **NEVER commit the `.env` file** — it contains `ANTHROPIC_API_KEY`. It is gitignored for this reason.
+2. **NEVER commit the `.env` file** — it contains `GEMINI_API_KEY`. It is gitignored for this reason.
 3. **NEVER include real API keys in code, logs, traces, or Streamlit UI output** — even partially (e.g. first 8 chars).
 4. **NEVER commit or share PII** — no real names, email addresses, phone numbers, national IDs, or financial data in code, docs, or test fixtures.
-5. **Before every `git add` or push: scan staged files** for the patterns `sk-ant-`, `_KEY=`, `password=`, `secret=`, `token=` and abort if a real value (not a placeholder like `your_api_key_here`) is found.
+5. **Before every `git add` or push: scan staged files** for the patterns `AIza`, `sk-ant-`, `_KEY=`, `password=`, `secret=`, `token=` and abort if a real value (not a placeholder like `your_api_key_here`) is found.
 
 Allowed in committed files:
-- `.env.example` with placeholder values only (e.g. `ANTHROPIC_API_KEY=your_api_key_here`)
-- References to environment variable names (e.g. `os.getenv("ANTHROPIC_API_KEY")`)
+- `.env.example` with placeholder values only (e.g. `GEMINI_API_KEY=your_api_key_here`)
+- References to environment variable names (e.g. `os.getenv("GEMINI_API_KEY")`)
 
 ---
 
@@ -27,7 +27,7 @@ Companion Streamlit apps for Anthropic's Claude Partner Network Learning Path (S
 
 **Exception — Module 04 (MCP):** built from a set of structured video-course notes the user provided directly (covering MCP architecture, clients, tools, resources, prompts), not from scraped Skilljar page text. The user explicitly confirmed this note set as the source for this module. Treat it with the same fidelity rule as Skilljar text: build only from what's given, don't extend beyond it from general knowledge.
 
-**LLM Provider:** Anthropic Claude API (`ANTHROPIC_API_KEY` already configured — see sibling project `mcp101`). Use the current Claude model family; do not hardcode a deprecated model string — check `utils/llm.py` in the module being edited for the active constant.
+**LLM Provider:** the course content teaches Claude/Claude Code/MCP concepts, but live demos actually run on **Google Gemini** (`GEMINI_API_KEY`), not the real Anthropic API — there is no `ANTHROPIC_API_KEY` available in this environment (checked directly; earlier notes claiming `mcp101` had one were wrong). This mirrors the same substitution used in the sibling `_agents101` project. Model rule: **always Gemini 2.5+** (e.g. `gemini-2.5-flash`) via the `google-genai` SDK — never `google-generativeai` (deprecated) and never a sub-2.5 model. Check `utils/llm.py` in the module being edited for the active constant. If a real Anthropic key ever becomes available, swap the client in `utils/llm.py` — the rest of each page calls generic helpers (`ask_claude`, `ask_claude_messages`, `ask_claude_with_tools`) that don't need to change.
 
 **UI:** Streamlit, one multi-page app per module folder, independent `requirements.txt`/`.venv` per module.
 
@@ -49,6 +49,12 @@ Companion Streamlit apps for Anthropic's Claude Partner Network Learning Path (S
 ```
 
 **Comparison rule:** every pros/cons or feature comparison is a table, never a bullet list — numbered rows, blank cells (`—`) rather than dropped rows.
+
+## Critical Gemini SDK Notes (do not revert)
+
+- **Automatic function calling is ON by default** in `client.chats.create()` — always disable it with `automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)` when tools are involved. Without this, tools execute silently and `response.function_calls` returns `None` — the tool runs but the page can't show what happened.
+- **History format:** `[{"role": "user"/"model", "parts": [{"text": "..."}]}]` — note the role is `"model"`, not `"assistant"`, and `parts` must be a list of dicts, never a plain string.
+- **Tool schemas:** pages build tool definitions as plain `{"name", "description", "input_schema"}` dicts (the same shape regardless of provider) — `utils/llm.py` converts these into `types.FunctionDeclaration` internally, so page code never needs to know it's talking to Gemini.
 
 ## Commit Convention
 

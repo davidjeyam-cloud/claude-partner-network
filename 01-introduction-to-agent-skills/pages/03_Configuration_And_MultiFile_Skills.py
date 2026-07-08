@@ -220,7 +220,7 @@ if st.button("Check this description", type="primary"):
             st.markdown(answer)
             render_trace(system_prompt, user_message, answer)
         except Exception as e:
-            st.error(f"Couldn't reach the Claude API — check ANTHROPIC_API_KEY in .env. ({e})")
+            st.error(f"Couldn't reach the Gemini API — check GEMINI_API_KEY in .env. ({e})")
 
 st.markdown("---")
 render_quiz(QUIZ_QUESTIONS, key="quiz_03")

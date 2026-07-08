@@ -35,7 +35,7 @@ def render_lesson_chat(lesson_context: str, key: str) -> None:
             with st.spinner("Thinking..."):
                 answer = ask_claude_messages(system_prompt, st.session_state[history_key])
         except Exception as e:
-            answer = f"Couldn't reach the Claude API — check ANTHROPIC_API_KEY in .env. ({e})"
+            answer = f"Couldn't reach the Gemini API — check GEMINI_API_KEY in .env. ({e})"
 
         st.session_state[history_key].append({"role": "assistant", "content": answer})
         with st.chat_message("assistant"):

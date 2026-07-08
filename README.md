@@ -11,7 +11,7 @@ Course content (lesson text, screenshots, notes) is relayed by the learner from 
 | 01 | Introduction to Agent Skills | [link](https://anthropic-partners.skilljar.com/introduction-to-agent-skills) | 🧭 In progress — 3/6 sections built |
 | 02 | Building with the Claude API | [link](https://anthropic-partners.skilljar.com/claude-with-the-anthropic-api) | 🔜 Scaffolded |
 | 03 | Claude Code in Action | [link](https://anthropic-partners.skilljar.com/claude-code-in-action) | 🔜 Scaffolded |
-| 04 | Introduction to Model Context Protocol | [link](https://anthropic-partners.skilljar.com/introduction-to-model-context-protocol) | 🧭 In progress — 0/11 sections built (built from provided course notes, see CLAUDE.md) |
+| 04 | Introduction to Model Context Protocol | [link](https://anthropic-partners.skilljar.com/introduction-to-model-context-protocol) | ✅ 11/11 sections built (built from provided course notes, see CLAUDE.md) |
 
 ## Running a module
 
@@ -20,9 +20,12 @@ cd 01-introduction-to-agent-skills
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-copy ..\.env.example .env    # add your ANTHROPIC_API_KEY
+copy ..\.env.example .env    # add your GEMINI_API_KEY
 streamlit run app.py
 ```
+
+Live demos run on Google Gemini, not the real Claude API — see the **LLM Provider** note in
+[CLAUDE.md](CLAUDE.md) for why.
 
 Each module folder is independent — its own `requirements.txt` and `.venv`.
 

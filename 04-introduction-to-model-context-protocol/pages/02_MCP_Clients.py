@@ -158,7 +158,7 @@ if st.button("Send to Claude", type="primary"):
                     st.markdown("**Raw final response:**")
                     st.code(str(result["raw_final"]), language="text")
         except Exception as e:
-            st.error(f"Couldn't reach the Claude API — check ANTHROPIC_API_KEY in .env. ({e})")
+            st.error(f"Couldn't reach the Gemini API — check GEMINI_API_KEY in .env. ({e})")
 
 QUIZ_QUESTIONS = [
     {
