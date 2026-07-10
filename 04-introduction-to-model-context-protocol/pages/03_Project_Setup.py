@@ -1,9 +1,29 @@
+import os
+from pathlib import Path
+
 import streamlit as st
 from google.genai import types
 
 from utils.chat import render_lesson_chat
 from utils.llm import get_client
 from utils.quiz import render_quiz
+
+DOCS_DIR = Path(__file__).resolve().parent.parent / "documents"
+DOCS_DIR.mkdir(exist_ok=True)
+
+
+def list_doc_names() -> list:
+    return sorted(p.name for p in DOCS_DIR.iterdir() if p.is_file() and p.name != ".gitkeep")
+
+
+def safe_doc_path(doc_id: str) -> Path:
+    """Strips any directory components from doc_id and refuses to resolve
+    outside DOCS_DIR — doc_id is untrusted input (the model chooses it)."""
+    name = os.path.basename(doc_id)
+    path = (DOCS_DIR / name).resolve()
+    if not path.is_relative_to(DOCS_DIR.resolve()):
+        raise ValueError(f"'{doc_id}' is not a valid document id")
+    return path
 
 st.set_page_config(page_title="Project Setup", page_icon="🧩", layout="wide")
 st.title("Project Setup")
@@ -80,10 +100,19 @@ and edits documents (**tools**), pulls document content in ahead of time (**reso
 and runs pre-written commands like `/format` (**prompts**). This is that same project,
 rebuilt as a chat right here — with a **live protocol trace** on the right so you can watch
 every MCP message type fire as you talk to it.
+
+**This is backed by real files, not a fake in-memory store.** Drop `.txt`/`.md` files into:
     """
 )
+st.code(str(DOCS_DIR), language="text")
+st.caption("doc_id is just the filename — flat namespace, no subfolders, no path info.")
 
 TOOLS = [
+    {
+        "name": "list_documents",
+        "description": "Lists the filenames of every document currently available.",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
     {
         "name": "read_doc_contents",
         "description": "Reads the contents of a document, given its doc_id.",
@@ -121,15 +150,10 @@ KIND_LABEL = {
 }
 
 SYSTEM_PROMPT = (
-    "You are a CLI assistant with access to a document store via the read_doc_contents "
-    "and edit_document tools. Use them as needed."
+    "You are a CLI assistant with access to a document store via the list_documents, "
+    "read_doc_contents, and edit_document tools. Use them as needed."
 )
 
-if "cli_docs" not in st.session_state:
-    st.session_state.cli_docs = {
-        "plan.md": "Q3 roadmap: ship the MCP module, ship the Claude API module.",
-        "report.pdf": "Quarterly report: revenue up 12%, churn down 3%.",
-    }
 if "cli_messages" not in st.session_state:
     st.session_state.cli_messages = []
 if "cli_chat" not in st.session_state:
@@ -145,21 +169,29 @@ def log_trace(kind: str, detail: dict) -> None:
 
 
 def execute_tool(name: str, tool_input: dict) -> str:
-    docs = st.session_state.cli_docs
-    doc_id = tool_input.get("doc_id", "")
-    if doc_id not in docs:
-        result = f"Error: document '{doc_id}' not found"
-    elif name == "read_doc_contents":
-        result = docs[doc_id]
-    elif name == "edit_document":
-        old, new = tool_input.get("old_string", ""), tool_input.get("new_string", "")
-        if old not in docs[doc_id]:
-            result = f"Error: '{old}' not found in {doc_id}"
+    try:
+        if name == "list_documents":
+            names = list_doc_names()
+            result = str(names) if names else "No documents found yet — the folder is empty."
+        elif name == "read_doc_contents":
+            path = safe_doc_path(tool_input.get("doc_id", ""))
+            result = path.read_text(encoding="utf-8") if path.exists() else f"Error: document '{tool_input.get('doc_id')}' not found"
+        elif name == "edit_document":
+            path = safe_doc_path(tool_input.get("doc_id", ""))
+            if not path.exists():
+                result = f"Error: document '{tool_input.get('doc_id')}' not found"
+            else:
+                text = path.read_text(encoding="utf-8")
+                old, new = tool_input.get("old_string", ""), tool_input.get("new_string", "")
+                if old not in text:
+                    result = f"Error: '{old}' not found in {tool_input.get('doc_id')}"
+                else:
+                    path.write_text(text.replace(old, new), encoding="utf-8")
+                    result = f"Updated {tool_input.get('doc_id')}"
         else:
-            docs[doc_id] = docs[doc_id].replace(old, new)
-            result = f"Updated {doc_id}"
-    else:
-        result = "Unknown tool"
+            result = "Unknown tool"
+    except ValueError as e:
+        result = f"Error: {e}"
     log_trace("call_tool", {"name": name, "input": tool_input, "result": result})
     return result
 
@@ -188,15 +220,18 @@ col_chat, col_trace = st.columns([2, 1])
 
 with col_chat:
     st.markdown("**📎 Document picker** (simulates selecting a resource via arrow keys + space)")
+    available_docs = list_doc_names()
+    if not available_docs:
+        st.caption(f"No files in `{DOCS_DIR.name}/` yet — drop some in, then refresh this page.")
     doc_choice = st.selectbox(
         "Attach a document as context for your next message",
-        ["(none)"] + list(st.session_state.cli_docs.keys()),
+        ["(none)"] + available_docs,
         key="cli_doc_picker",
     )
     pick_col, detach_col = st.columns(2)
     with pick_col:
         if doc_choice != "(none)" and st.button("Attach", key="cli_attach"):
-            content = st.session_state.cli_docs[doc_choice]
+            content = safe_doc_path(doc_choice).read_text(encoding="utf-8")
             log_trace("read_resource", {"uri": f"docs://documents/{doc_choice}", "content": content})
             st.session_state.cli_attached_doc = doc_choice
     with detach_col:
@@ -215,8 +250,11 @@ with col_chat:
         stripped = user_input.strip()
         command = stripped.split()[0] if stripped.startswith("/") else None
 
-        if command in PROMPTS:
-            doc_for_prompt = st.session_state.cli_attached_doc or next(iter(st.session_state.cli_docs))
+        if command in PROMPTS and not available_docs:
+            st.warning(f"No documents in `{DOCS_DIR.name}/` yet — add one before using {command}.")
+            st.stop()
+        elif command in PROMPTS:
+            doc_for_prompt = st.session_state.cli_attached_doc or available_docs[0]
             effective_input = PROMPTS[command].format(doc_id=doc_for_prompt)
             log_trace(
                 "get_prompt",
@@ -238,8 +276,9 @@ with col_chat:
         message_to_send = effective_input
         if st.session_state.cli_attached_doc and command is None:
             doc_id = st.session_state.cli_attached_doc
+            attached_content = safe_doc_path(doc_id).read_text(encoding="utf-8")
             message_to_send = (
-                f"[Attached resource {doc_id}]:\n{st.session_state.cli_docs[doc_id]}\n\n"
+                f"[Attached resource {doc_id}]:\n{attached_content}\n\n"
                 f"User message: {effective_input}"
             )
 
@@ -263,9 +302,10 @@ with col_chat:
             st.error(f"Couldn't reach the Gemini API — check GEMINI_API_KEY in .env. ({e})")
 
     if st.button("Reset conversation", key="cli_reset"):
-        for k in ("cli_messages", "cli_chat", "cli_trace", "cli_attached_doc", "cli_docs"):
+        for k in ("cli_messages", "cli_chat", "cli_trace", "cli_attached_doc"):
             st.session_state.pop(k, None)
         st.rerun()
+    st.caption("Resets the chat and trace only — files on disk are untouched.")
 
 with col_trace:
     st.markdown("**🔍 Live protocol trace**")

@@ -4,3 +4,7 @@ __pycache__/
 .env
 .streamlit/secrets.toml
 .DS_Store
+
+# User-dropped files for the Module 04 live-file chatbot demo — not ours to publish
+04-introduction-to-model-context-protocol/documents/*
+!04-introduction-to-model-context-protocol/documents/.gitkeep
